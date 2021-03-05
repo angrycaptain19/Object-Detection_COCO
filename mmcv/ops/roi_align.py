@@ -162,13 +162,13 @@ class RoIAlign(nn.Module):
             rois: Bx5 boxes. First column is the index into N.\
                 The other 4 columns are xyxy.
         """
-        if self.use_torchvision:
-            from torchvision.ops import roi_align as tv_roi_align
-            return tv_roi_align(input, rois, self.output_size,
-                                self.spatial_scale, self.sampling_ratio)
-        else:
+        if not self.use_torchvision:
             return roi_align(input, rois, self.output_size, self.spatial_scale,
                              self.sampling_ratio, self.pool_mode, self.aligned)
+
+        from torchvision.ops import roi_align as tv_roi_align
+        return tv_roi_align(input, rois, self.output_size,
+                            self.spatial_scale, self.sampling_ratio)
 
     def __repr__(self):
         s = self.__class__.__name__

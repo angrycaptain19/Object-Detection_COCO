@@ -55,17 +55,12 @@ class MixedOp(nn.Module):
         self._ops = self._ops.cuda()
    
     def forward(self, x, weights):
-        i = 0
-        for op in self._ops:
+      for i, op in enumerate(self._ops):
 #            print('_ops: ',op)
-            w_ = weights[:,i,:,:].unsqueeze(1)
+        w_ = weights[:,i,:,:].unsqueeze(1)
 #            print('w_: ',w_.shape)
-            if i == 0:
-                out = w_*op(x)
-            else: 
-                out = out + (w_*op(x))
-            i += 1
-        return out
+        out = w_*op(x) if i == 0 else out + (w_*op(x))
+      return out
 
 @CONV_LAYERS.register_module('NASConv')
 class NAS_Conv(ConvAWS2d):

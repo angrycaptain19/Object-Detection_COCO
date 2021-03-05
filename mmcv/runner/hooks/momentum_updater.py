@@ -10,11 +10,10 @@ class MomentumUpdaterHook(Hook):
                  warmup_iters=0,
                  warmup_ratio=0.9):
         # validate the "warmup" argument
-        if warmup is not None:
-            if warmup not in ['constant', 'linear', 'exp']:
-                raise ValueError(
-                    f'"{warmup}" is not a supported type for warming up, valid'
-                    ' types are "constant" and "linear"')
+        if warmup is not None and warmup not in ['constant', 'linear', 'exp']:
+            raise ValueError(
+                f'"{warmup}" is not a supported type for warming up, valid'
+                ' types are "constant" and "linear"')
         if warmup is not None:
             assert warmup_iters > 0, \
                 '"warmup_iters" must be a positive integer'
@@ -92,7 +91,7 @@ class MomentumUpdaterHook(Hook):
             else:
                 warmup_momentum = self.get_warmup_momentum(cur_iter)
                 self._set_momentum(runner, warmup_momentum)
-        elif self.by_epoch:
+        else:
             if self.warmup is None or cur_iter > self.warmup_iters:
                 return
             elif cur_iter == self.warmup_iters:

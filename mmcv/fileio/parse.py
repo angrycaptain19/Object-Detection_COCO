@@ -12,11 +12,11 @@ def list_from_file(filename, prefix='', offset=0, max_num=0):
     Returns:
         list[str]: A list of strings.
     """
-    cnt = 0
     item_list = []
     with open(filename, 'r') as f:
         for _ in range(offset):
             f.readline()
+        cnt = 0
         for line in f:
             if max_num > 0 and cnt >= max_num:
                 break

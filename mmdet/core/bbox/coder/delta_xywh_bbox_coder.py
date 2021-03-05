@@ -42,8 +42,7 @@ class DeltaXYWHBBoxCoder(BaseBBoxCoder):
 
         assert bboxes.size(0) == gt_bboxes.size(0)
         assert bboxes.size(-1) == gt_bboxes.size(-1) == 4
-        encoded_bboxes = bbox2delta(bboxes, gt_bboxes, self.means, self.stds)
-        return encoded_bboxes
+        return bbox2delta(bboxes, gt_bboxes, self.means, self.stds)
 
     def decode(self,
                bboxes,
@@ -65,10 +64,8 @@ class DeltaXYWHBBoxCoder(BaseBBoxCoder):
         """
 
         assert pred_bboxes.size(0) == bboxes.size(0)
-        decoded_bboxes = delta2bbox(bboxes, pred_bboxes, self.means, self.stds,
+        return delta2bbox(bboxes, pred_bboxes, self.means, self.stds,
                                     max_shape, wh_ratio_clip)
-
-        return decoded_bboxes
 
 
 def bbox2delta(proposals, gt, means=(0., 0., 0., 0.), stds=(1., 1., 1., 1.)):
@@ -193,5 +190,4 @@ def delta2bbox(rois,
         y1 = y1.clamp(min=0, max=max_shape[0])
         x2 = x2.clamp(min=0, max=max_shape[1])
         y2 = y2.clamp(min=0, max=max_shape[0])
-    bboxes = torch.stack([x1, y1, x2, y2], dim=-1).view_as(deltas)
-    return bboxes
+    return torch.stack([x1, y1, x2, y2], dim=-1).view_as(deltas)

@@ -80,8 +80,7 @@ class HRModule(nn.Module):
                 build_norm_layer(self.norm_cfg, num_channels[branch_index] *
                                  block.expansion)[1])
 
-        layers = []
-        layers.append(
+        layers = [
             block(
                 self.in_channels[branch_index],
                 num_channels[branch_index],
@@ -89,10 +88,13 @@ class HRModule(nn.Module):
                 downsample=downsample,
                 with_cp=self.with_cp,
                 norm_cfg=self.norm_cfg,
-                conv_cfg=self.conv_cfg))
+                conv_cfg=self.conv_cfg,
+            )
+        ]
+
         self.in_channels[branch_index] = \
             num_channels[branch_index] * block.expansion
-        for i in range(1, num_blocks[branch_index]):
+        for _ in range(1, num_blocks[branch_index]):
             layers.append(
                 block(
                     self.in_channels[branch_index],
@@ -104,11 +106,11 @@ class HRModule(nn.Module):
         return nn.Sequential(*layers)
 
     def _make_branches(self, num_branches, block, num_blocks, num_channels):
-        branches = []
+        branches = [
+            self._make_one_branch(i, block, num_blocks, num_channels)
+            for i in range(num_branches)
+        ]
 
-        for i in range(num_branches):
-            branches.append(
-                self._make_one_branch(i, block, num_blocks, num_channels))
 
         return nn.ModuleList(branches)
 
@@ -184,12 +186,11 @@ class HRModule(nn.Module):
 
         x_fuse = []
         for i in range(len(self.fuse_layers)):
-            y = 0
-            for j in range(self.num_branches):
-                if i == j:
-                    y += x[j]
-                else:
-                    y += self.fuse_layers[i][j](x[j])
+            y = sum(
+                x[j] if i == j else self.fuse_layers[i][j](x[j])
+                for j in range(self.num_branches)
+            )
+
             x_fuse.append(self.relu(y))
         return x_fuse
 
@@ -413,8 +414,7 @@ class HRNet(nn.Module):
                     bias=False),
                 build_norm_layer(self.norm_cfg, planes * block.expansion)[1])
 
-        layers = []
-        layers.append(
+        layers = [
             block(
                 inplanes,
                 planes,
@@ -422,9 +422,12 @@ class HRNet(nn.Module):
                 downsample=downsample,
                 with_cp=self.with_cp,
                 norm_cfg=self.norm_cfg,
-                conv_cfg=self.conv_cfg))
+                conv_cfg=self.conv_cfg,
+            )
+        ]
+
         inplanes = planes * block.expansion
-        for i in range(1, blocks):
+        for _ in range(1, blocks):
             layers.append(
                 block(
                     inplanes,

@@ -117,7 +117,7 @@ def load_url_dist(url, model_dir=None):
 
 
 def get_torchvision_models():
-    model_urls = dict()
+    model_urls = {}
     for _, name, ispkg in pkgutil.walk_packages(torchvision.models.__path__):
         if ispkg:
             continue

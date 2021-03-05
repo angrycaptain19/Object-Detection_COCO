@@ -38,9 +38,8 @@ class TBLRBBoxCoder(BaseBBoxCoder):
         """
         assert bboxes.size(0) == gt_bboxes.size(0)
         assert bboxes.size(-1) == gt_bboxes.size(-1) == 4
-        encoded_bboxes = bboxes2tblr(
+        return bboxes2tblr(
             bboxes, gt_bboxes, normalizer=self.normalizer)
-        return encoded_bboxes
 
     def decode(self, bboxes, pred_bboxes, max_shape=None):
         """Apply transformation `pred_bboxes` to `boxes`.
@@ -55,13 +54,11 @@ class TBLRBBoxCoder(BaseBBoxCoder):
             torch.Tensor: Decoded boxes.
         """
         assert pred_bboxes.size(0) == bboxes.size(0)
-        decoded_bboxes = tblr2bboxes(
+        return tblr2bboxes(
             bboxes,
             pred_bboxes,
             normalizer=self.normalizer,
             max_shape=max_shape)
-
-        return decoded_bboxes
 
 
 def bboxes2tblr(priors, gts, normalizer=4.0, normalize_by_wh=True):

@@ -14,11 +14,11 @@ def _get_cuda_home():
 
 
 def get_build_config():
-    if TORCH_VERSION == 'parrots':
-        from parrots.config import get_build_info
-        return get_build_info()
-    else:
+    if TORCH_VERSION != 'parrots':
         return torch.__config__.show()
+
+    from parrots.config import get_build_info
+    return get_build_info()
 
 
 def _get_conv():

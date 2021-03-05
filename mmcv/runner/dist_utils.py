@@ -71,10 +71,7 @@ def get_dist_info():
     if TORCH_VERSION < '1.0':
         initialized = dist._initialized
     else:
-        if dist.is_available():
-            initialized = dist.is_initialized()
-        else:
-            initialized = False
+        initialized = dist.is_initialized() if dist.is_available() else False
     if initialized:
         rank = dist.get_rank()
         world_size = dist.get_world_size()

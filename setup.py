@@ -31,9 +31,8 @@ def get_git_hash():
         env['LANGUAGE'] = 'C'
         env['LANG'] = 'C'
         env['LC_ALL'] = 'C'
-        out = subprocess.Popen(
+        return subprocess.Popen(
             cmd, stdout=subprocess.PIPE, env=env).communicate()[0]
-        return out
 
     try:
         out = _minimal_ext_cmd(['git', 'rev-parse', 'HEAD'])
@@ -71,7 +70,9 @@ version_info = ({})
     with open('mmdet/VERSION', 'r') as f:
         SHORT_VERSION = f.read().strip()
     VERSION_INFO = ', '.join(
-        [x if x.isdigit() else f'"{x}"' for x in SHORT_VERSION.split('.')])
+        x if x.isdigit() else f'"{x}"' for x in SHORT_VERSION.split('.')
+    )
+
     VERSION = SHORT_VERSION + '+' + sha
 
     version_file_str = content.format(time.asctime(), VERSION, SHORT_VERSION,
@@ -135,8 +136,7 @@ def parse_requirements(fname='requirements.txt', with_version=True):
         if line.startswith('-r '):
             # Allow specifying requirements in other files
             target = line.split(' ')[1]
-            for info in parse_require_file(target):
-                yield info
+            yield from parse_require_file(target)
         else:
             info = {'line': line}
             if line.startswith('-e '):
@@ -168,22 +168,22 @@ def parse_requirements(fname='requirements.txt', with_version=True):
             for line in f.readlines():
                 line = line.strip()
                 if line and not line.startswith('#'):
-                    for info in parse_line(line):
-                        yield info
+                    yield from parse_line(line)
 
     def gen_packages_items():
-        if exists(require_fpath):
-            for info in parse_require_file(require_fpath):
-                parts = [info['package']]
-                if with_version and 'version' in info:
-                    parts.extend(info['version'])
-                if not sys.version.startswith('3.4'):
-                    # apparently package_deps are broken in 3.4
-                    platform_deps = info.get('platform_deps')
-                    if platform_deps is not None:
-                        parts.append(';' + platform_deps)
-                item = ''.join(parts)
-                yield item
+        if not exists(require_fpath):
+            return
+        for info in parse_require_file(require_fpath):
+            parts = [info['package']]
+            if with_version and 'version' in info:
+                parts.extend(info['version'])
+            if not sys.version.startswith('3.4'):
+                # apparently package_deps are broken in 3.4
+                platform_deps = info.get('platform_deps')
+                if platform_deps is not None:
+                    parts.append(';' + platform_deps)
+            item = ''.join(parts)
+            yield item
 
     packages = list(gen_packages_items())
     return packages

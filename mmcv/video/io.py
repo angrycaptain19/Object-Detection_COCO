@@ -35,8 +35,7 @@ class Cache:
         self._cache[key] = val
 
     def get(self, key, default=None):
-        val = self._cache[key] if key in self._cache else default
-        return val
+        return self._cache[key] if key in self._cache else default
 
 
 class VideoReader:
@@ -250,8 +249,8 @@ class VideoReader:
         # support negative indexing
         if index < 0:
             index += self.frame_cnt
-            if index < 0:
-                raise IndexError('index out of range')
+        if index < 0:
+            raise IndexError('index out of range')
         return self.get_frame(index)
 
     def __iter__(self):

@@ -23,10 +23,8 @@ def quantize(arr, min_val, max_val, levels, dtype=np.int64):
             f'min_val ({min_val}) must be smaller than max_val ({max_val})')
 
     arr = np.clip(arr, min_val, max_val) - min_val
-    quantized_arr = np.minimum(
+    return np.minimum(
         np.floor(levels * arr / (max_val - min_val)).astype(dtype), levels - 1)
-
-    return quantized_arr
 
 
 def dequantize(arr, min_val, max_val, levels, dtype=np.float64):
@@ -49,7 +47,5 @@ def dequantize(arr, min_val, max_val, levels, dtype=np.float64):
         raise ValueError(
             f'min_val ({min_val}) must be smaller than max_val ({max_val})')
 
-    dequantized_arr = (arr + 0.5).astype(dtype) * (max_val -
+    return (arr + 0.5).astype(dtype) * (max_val -
                                                    min_val) / levels + min_val
-
-    return dequantized_arr

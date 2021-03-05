@@ -50,19 +50,17 @@ def build_dataset(cfg, default_args=None):
     from .dataset_wrappers import (ConcatDataset, RepeatDataset,
                                    ClassBalancedDataset)
     if isinstance(cfg, (list, tuple)):
-        dataset = ConcatDataset([build_dataset(c, default_args) for c in cfg])
+        return ConcatDataset([build_dataset(c, default_args) for c in cfg])
     elif cfg['type'] == 'RepeatDataset':
-        dataset = RepeatDataset(
+        return RepeatDataset(
             build_dataset(cfg['dataset'], default_args), cfg['times'])
     elif cfg['type'] == 'ClassBalancedDataset':
-        dataset = ClassBalancedDataset(
+        return ClassBalancedDataset(
             build_dataset(cfg['dataset'], default_args), cfg['oversample_thr'])
     elif isinstance(cfg.get('ann_file'), (list, tuple)):
-        dataset = _concat_dataset(cfg, default_args)
+        return _concat_dataset(cfg, default_args)
     else:
-        dataset = build_from_cfg(cfg, DATASETS, default_args)
-
-    return dataset
+        return build_from_cfg(cfg, DATASETS, default_args)
 
 
 def build_dataloader(dataset,
@@ -114,7 +112,7 @@ def build_dataloader(dataset,
         worker_init_fn, num_workers=num_workers, rank=rank,
         seed=seed) if seed is not None else None
 
-    data_loader = DataLoader(
+    return DataLoader(
         dataset,
         batch_size=batch_size,
         sampler=sampler,
@@ -123,8 +121,6 @@ def build_dataloader(dataset,
         pin_memory=False,
         worker_init_fn=init_fn,
         **kwargs)
-
-    return data_loader
 
 
 def worker_init_fn(worker_id, num_workers, rank, seed):

@@ -252,20 +252,12 @@ def print_model_with_flops(model,
     def accumulate_params(self):
         if is_supported_instance(self):
             return self.__params__
-        else:
-            sum = 0
-            for m in self.children():
-                sum += m.accumulate_params()
-            return sum
+        return sum(m.accumulate_params() for m in self.children())
 
     def accumulate_flops(self):
         if is_supported_instance(self):
             return self.__flops__ / model.__batch_counter__
-        else:
-            sum = 0
-            for m in self.children():
-                sum += m.accumulate_flops()
-            return sum
+        return sum(m.accumulate_flops() for m in self.children())
 
     def flops_repr(self):
         accumulated_num_params = self.accumulate_params()
@@ -310,8 +302,7 @@ def get_model_parameters_number(model):
     Returns:
         float: Parameter number of the model.
     """
-    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    return num_params
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def add_flops_counting_methods(net_main_module):
@@ -341,10 +332,12 @@ def compute_average_flops_cost(self):
         float: Current mean flops consumption per image.
     """
     batches_count = self.__batch_counter__
-    flops_sum = 0
-    for module in self.modules():
-        if is_supported_instance(module):
-            flops_sum += module.__flops__
+    flops_sum = sum(
+        module.__flops__
+        for module in self.modules()
+        if is_supported_instance(module)
+    )
+
     params_sum = get_model_parameters_number(self)
     return flops_sum / batches_count, params_sum
 
@@ -498,7 +491,6 @@ def batch_counter_hook(module, input, output):
         input = input[0]
         batch_size = len(input)
     else:
-        pass
         print('Warning! No positional inputs found for a module, '
               'assuming batch size is 1.')
     module.__batch_counter__ += batch_size
@@ -534,16 +526,13 @@ def add_flops_counter_variable_or_reset(module):
 
 
 def is_supported_instance(module):
-    if type(module) in MODULES_MAPPING:
-        return True
-    return False
+    return type(module) in MODULES_MAPPING
 
 
 def remove_flops_counter_hook_function(module):
-    if is_supported_instance(module):
-        if hasattr(module, '__flops_handle__'):
-            module.__flops_handle__.remove()
-            del module.__flops_handle__
+    if is_supported_instance(module) and hasattr(module, '__flops_handle__'):
+        module.__flops_handle__.remove()
+        del module.__flops_handle__
 
 
 MODULES_MAPPING = {

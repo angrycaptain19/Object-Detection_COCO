@@ -50,9 +50,8 @@ class LegacyDeltaXYWHBBoxCoder(BaseBBoxCoder):
         """
         assert bboxes.size(0) == gt_bboxes.size(0)
         assert bboxes.size(-1) == gt_bboxes.size(-1) == 4
-        encoded_bboxes = legacy_bbox2delta(bboxes, gt_bboxes, self.means,
+        return legacy_bbox2delta(bboxes, gt_bboxes, self.means,
                                            self.stds)
-        return encoded_bboxes
 
     def decode(self,
                bboxes,
@@ -73,10 +72,8 @@ class LegacyDeltaXYWHBBoxCoder(BaseBBoxCoder):
             torch.Tensor: Decoded boxes.
         """
         assert pred_bboxes.size(0) == bboxes.size(0)
-        decoded_bboxes = legacy_delta2bbox(bboxes, pred_bboxes, self.means,
+        return legacy_delta2bbox(bboxes, pred_bboxes, self.means,
                                            self.stds, max_shape, wh_ratio_clip)
-
-        return decoded_bboxes
 
 
 def legacy_bbox2delta(proposals,
@@ -208,5 +205,4 @@ def legacy_delta2bbox(rois,
         y1 = y1.clamp(min=0, max=max_shape[0] - 1)
         x2 = x2.clamp(min=0, max=max_shape[1] - 1)
         y2 = y2.clamp(min=0, max=max_shape[0] - 1)
-    bboxes = torch.stack([x1, y1, x2, y2], dim=-1).view_as(deltas)
-    return bboxes
+    return torch.stack([x1, y1, x2, y2], dim=-1).view_as(deltas)

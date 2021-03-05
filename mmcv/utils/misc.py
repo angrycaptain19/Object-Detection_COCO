@@ -75,10 +75,7 @@ def is_seq_of(seq, expected_type, seq_type=None):
         exp_seq_type = seq_type
     if not isinstance(seq, exp_seq_type):
         return False
-    for item in seq:
-        if not isinstance(item, expected_type):
-            return False
-    return True
+    return all(isinstance(item, expected_type) for item in seq)
 
 
 def is_list_of(seq, expected_type):
@@ -158,15 +155,12 @@ def check_prerequisites(
         def wrapped_func(*args, **kwargs):
             requirements = [prerequisites] if isinstance(
                 prerequisites, str) else prerequisites
-            missing = []
-            for item in requirements:
-                if not checker(item):
-                    missing.append(item)
-            if missing:
-                print(msg_tmpl.format(', '.join(missing), func.__name__))
-                raise RuntimeError('Prerequisites not meet.')
-            else:
+            missing = [item for item in requirements if not checker(item)]
+            if not missing:
                 return func(*args, **kwargs)
+
+            print(msg_tmpl.format(', '.join(missing), func.__name__))
+            raise RuntimeError('Prerequisites not meet.')
 
         return wrapped_func
 
@@ -183,10 +177,7 @@ def _check_py_package(package):
 
 
 def _check_executable(cmd):
-    if subprocess.call(f'which {cmd}', shell=True) != 0:
-        return False
-    else:
-        return True
+    return subprocess.call(f'which {cmd}', shell=True) == 0
 
 
 def requires_package(prerequisites):

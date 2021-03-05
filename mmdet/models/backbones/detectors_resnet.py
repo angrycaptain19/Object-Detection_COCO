@@ -176,8 +176,7 @@ class ResLayer(nn.Sequential):
             ])
             downsample = nn.Sequential(*downsample)
 
-        layers = []
-        layers.append(
+        layers = [
             block(
                 inplanes=inplanes,
                 planes=planes,
@@ -186,7 +185,10 @@ class ResLayer(nn.Sequential):
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
                 rfp_inplanes=rfp_inplanes,
-                **kwargs))
+                **kwargs
+            )
+        ]
+
         inplanes = planes * block.expansion
         for _ in range(1, num_blocks):
             layers.append(

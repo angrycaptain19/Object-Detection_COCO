@@ -316,10 +316,7 @@ def eval_map(det_results,
         cls_dets, cls_gts, cls_gts_ignore = get_cls_results(
             det_results, annotations, i)
         # choose proper function according to datasets to compute tp and fp
-        if dataset in ['det', 'vid']:
-            tpfp_func = tpfp_imagenet
-        else:
-            tpfp_func = tpfp_default
+        tpfp_func = tpfp_imagenet if dataset in ['det', 'vid'] else tpfp_default
         # compute tp and fp for each image with multiple processes
         tpfp = pool.starmap(
             tpfp_func,
@@ -378,10 +375,12 @@ def eval_map(det_results,
             else:
                 mean_ap.append(0.0)
     else:
-        aps = []
-        for cls_result in eval_results:
-            if cls_result['num_gts'] > 0:
-                aps.append(cls_result['ap'])
+        aps = [
+            cls_result['ap']
+            for cls_result in eval_results
+            if cls_result['num_gts'] > 0
+        ]
+
         mean_ap = np.array(aps).mean().item() if aps else 0.0
 
     print_map_summary(

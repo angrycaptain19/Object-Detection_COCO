@@ -43,19 +43,18 @@ def _parse_arg(value, desc):
             raise RuntimeError(
                 "ONNX symbolic doesn't know to interpret Constant node")
     elif value.node().kind() == 'prim::ListConstruct':
-        if desc == 'is':
-            for v in value.node().inputs():
-                if v.node().kind() != 'onnx::Constant':
-                    raise RuntimeError(
-                        "Failed to export an ONNX attribute '" +
-                        v.node().kind() +
-                        "', since it's not constant, please try to make "
-                        'things (e.g., kernel size) static if possible')
-            return [int(v.node()['value']) for v in value.node().inputs()]
-        else:
+        if desc != 'is':
             raise RuntimeError(
                 "ONNX symbolic doesn't know to interpret ListConstruct node")
 
+        for v in value.node().inputs():
+            if v.node().kind() != 'onnx::Constant':
+                raise RuntimeError(
+                    "Failed to export an ONNX attribute '" +
+                    v.node().kind() +
+                    "', since it's not constant, please try to make "
+                    'things (e.g., kernel size) static if possible')
+        return [int(v.node()['value']) for v in value.node().inputs()]
     raise RuntimeError('Unexpected node type: {}'.format(value.node().kind()))
 
 
@@ -211,16 +210,13 @@ def _interpolate_size_to_scales(g, input, output_size, dim):
             g, g.op('Shape', input), axes=[0], ends=[maxsize], starts=[offset])
         divisor = g.op('Cast', divisor, to_i=cast_pytorch_to_onnx['Float'])
         scale_dims = g.op('Div', dividend, divisor)
-        scales = g.op('Concat', offsets, scale_dims, axis_i=0)
+        return g.op('Concat', offsets, scale_dims, axis_i=0)
     else:
-        scales_constant = [
-            1. if i < 2 else float(output_size[-(dim - i)]) /
-            float(input.type().sizes()[-(dim - i)]) for i in range(0, dim)
-        ]
-        scales = g.op(
+        scales_constant = [1. if i < 2 else float(output_size[-(dim - i)]) /
+            float(input.type().sizes()[-(dim - i)]) for i in range(dim)]
+        return g.op(
             'Constant',
             value_t=torch.tensor(scales_constant, dtype=torch.float32))
-    return scales
 
 
 def _interpolate_get_scales_if_available(g, scales):
@@ -259,11 +255,10 @@ def _interpolate_get_scales(g, scale_factor, dim):
     offsets = g.op('Constant', value_t=torch.ones(2, dtype=torch.float32))
     if isinstance(scale_factor.type(), torch._C.ListType):
         return g.op('Concat', offsets, scale_factor, axis_i=0)
-    else:
-        scale_factor = _unsqueeze_helper(g, scale_factor, 0)
-        scale_factor = g.op(
-            'Cast', scale_factor, to_i=cast_pytorch_to_onnx['Float'])
-        scales = [scale_factor for i in range(dim - 2)]
+    scale_factor = _unsqueeze_helper(g, scale_factor, 0)
+    scale_factor = g.op(
+        'Cast', scale_factor, to_i=cast_pytorch_to_onnx['Float'])
+    scales = [scale_factor for i in range(dim - 2)]
     scale_factor = g.op('Concat', offsets, *scales, axis_i=0)
     return scale_factor
 

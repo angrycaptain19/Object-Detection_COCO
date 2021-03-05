@@ -58,7 +58,7 @@ class PaviLoggerHook(LoggerHook):
         self.run_name = runner.work_dir.split('/')[-1]
 
         if not self.init_kwargs:
-            self.init_kwargs = dict()
+            self.init_kwargs = {}
         self.init_kwargs['task'] = self.run_name
         self.init_kwargs['model'] = runner._model_name
 
@@ -69,10 +69,12 @@ class PaviLoggerHook(LoggerHook):
 
     @master_only
     def log(self, runner):
-        tags = {}
-        for tag, val in runner.log_buffer.output.items():
-            if tag not in ['time', 'data_time'] and is_scalar(val):
-                tags[tag] = val
+        tags = {
+            tag: val
+            for tag, val in runner.log_buffer.output.items()
+            if tag not in ['time', 'data_time'] and is_scalar(val)
+        }
+
         # add learning rate
         lrs = runner.current_lr()
         if isinstance(lrs, dict):

@@ -20,30 +20,7 @@ def _interpolate(name, dim, interpolate_mode):
         empty_tensor = g.op(
             'Constant', value_t=torch.tensor([], dtype=torch.float32))
 
-        if scales is None:
-            input_size = g.op('Shape', input)
-            input_size_beg = sym_help._slice_helper(
-                g, input_size, axes=[0], ends=[2], starts=[0])
-            output_size = g.op(
-                'Cast',
-                output_size,
-                to_i=sym_help.cast_pytorch_to_onnx['Long'])
-            output_size = g.op('Concat', input_size_beg, output_size, axis_i=0)
-            scales = g.op(
-                'Constant', value_t=torch.tensor([], dtype=torch.float32))
-            return g.op(
-                'Resize',
-                input,
-                empty_tensor,
-                # roi only takes effect whith
-                # coordinate_transformation_mode="tf_crop_and_resize"
-                scales,  # scales is not needed since we are sending out_size
-                output_size,
-                coordinate_transformation_mode_s=transformation_mode,
-                cubic_coeff_a_f=-0.75,  # only valid when mode="cubic"
-                mode_s=interpolate_mode,  # nearest, linear, or cubic
-                nearest_mode_s='floor')  # only valid when mode="nearest"
-        else:
+        if scales is not None:
             return g.op(
                 'Resize',
                 input,
@@ -55,6 +32,29 @@ def _interpolate(name, dim, interpolate_mode):
                 cubic_coeff_a_f=-0.75,  # only valid when mode="cubic"
                 mode_s=interpolate_mode,  # nearest, linear, or cubic
                 nearest_mode_s='floor')  # only valid when mode="nearest"
+
+        input_size = g.op('Shape', input)
+        input_size_beg = sym_help._slice_helper(
+            g, input_size, axes=[0], ends=[2], starts=[0])
+        output_size = g.op(
+            'Cast',
+            output_size,
+            to_i=sym_help.cast_pytorch_to_onnx['Long'])
+        output_size = g.op('Concat', input_size_beg, output_size, axis_i=0)
+        scales = g.op(
+            'Constant', value_t=torch.tensor([], dtype=torch.float32))
+        return g.op(
+            'Resize',
+            input,
+            empty_tensor,
+            # roi only takes effect whith
+            # coordinate_transformation_mode="tf_crop_and_resize"
+            scales,  # scales is not needed since we are sending out_size
+            output_size,
+            coordinate_transformation_mode_s=transformation_mode,
+            cubic_coeff_a_f=-0.75,  # only valid when mode="cubic"
+            mode_s=interpolate_mode,  # nearest, linear, or cubic
+            nearest_mode_s='floor')  # only valid when mode="nearest"
 
     return symbolic_fn
 
@@ -107,9 +107,8 @@ def _prepare_onnx_paddings(g, dim, pad):
         perm_i=[1, 0])
     paddings = g.op('Reshape', paddings,
                     g.op('Constant', value_t=torch.tensor([-1])))
-    padding_c = g.op(
+    return g.op(
         'Cast', paddings, to_i=sym_help.cast_pytorch_to_onnx['Long'])
-    return padding_c
 
 
 def constant_pad_nd(g, input, padding, value=None):
@@ -155,14 +154,13 @@ def _avg_pool(name, tuple_fn):
                     value_t=torch.tensor(((0, ) * 2 + padding) * 2)),
                 mode_s='constant')
             padding = (0, ) * len(padding)
-        output = g.op(
+        return g.op(
             'AveragePool',
             input,
             kernel_shape_i=tuple_fn(kernel_size),
             strides_i=tuple_fn(stride),
             pads_i=padding * 2,
             ceil_mode_i=ceil_mode)
-        return output
 
     return symbolic_fn
 
@@ -204,9 +202,7 @@ def _get_im2col_indices_along_dim(g, input_d, kernel_size_d, dilation_d,
         'Unsqueeze', blocks_d_indices, axes_i=[0])  # Reshape to [1, -1]
     kernel_mask = g.op('Reshape', kernel_grid,
                        g.op('Constant', value_t=torch.tensor([-1, 1])))
-    block_mask = g.op('Add', blocks_d_indices, kernel_mask)
-
-    return block_mask
+    return g.op('Add', blocks_d_indices, kernel_mask)
 
 
 def _get_im2col_padded_input(g, input, padding_h, padding_w):

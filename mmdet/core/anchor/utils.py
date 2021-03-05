@@ -36,14 +36,13 @@ def anchor_inside_flags(flat_anchors,
     """
     img_h, img_w = img_shape[:2]
     if allowed_border >= 0:
-        inside_flags = valid_flags & \
+        return valid_flags & \
             (flat_anchors[:, 0] >= -allowed_border) & \
             (flat_anchors[:, 1] >= -allowed_border) & \
             (flat_anchors[:, 2] < img_w + allowed_border) & \
             (flat_anchors[:, 3] < img_h + allowed_border)
     else:
-        inside_flags = valid_flags
-    return inside_flags
+        return valid_flags
 
 
 def calc_region(bbox, ratio, featmap_size=None):

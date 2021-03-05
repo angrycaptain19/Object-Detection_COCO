@@ -205,9 +205,7 @@ class _NonLocalNd(nn.Module, metaclass=ABCMeta):
         y = y.permute(0, 2, 1).contiguous().reshape(n, self.inter_channels,
                                                     *x.size()[2:])
 
-        output = x + self.conv_out(y)
-
-        return output
+        return x + self.conv_out(y)
 
 
 class NonLocal1d(_NonLocalNd):
