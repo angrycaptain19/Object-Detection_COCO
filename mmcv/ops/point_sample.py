@@ -102,9 +102,7 @@ def abs_img_point_to_rel_img_point(abs_img_points,
                          dtype=torch.float,
                          device=abs_img_points.device)
     scale = scale.view(1, 1, 2)
-    rel_img_points = abs_img_points / scale * spatial_scale
-
-    return rel_img_points
+    return abs_img_points / scale * spatial_scale
 
 
 def rel_roi_point_to_rel_img_point(rois,
@@ -127,10 +125,8 @@ def rel_roi_point_to_rel_img_point(rois,
     """
 
     abs_img_point = rel_roi_point_to_abs_img_point(rois, rel_roi_points)
-    rel_img_point = abs_img_point_to_rel_img_point(abs_img_point, img_shape,
+    return abs_img_point_to_rel_img_point(abs_img_point, img_shape,
                                                    spatial_scale)
-
-    return rel_img_point
 
 
 def point_sample(input, points, align_corners=False, **kwargs):

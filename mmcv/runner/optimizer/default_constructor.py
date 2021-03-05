@@ -102,11 +102,14 @@ class DefaultOptimizerConstructor:
 
         # get base lr and weight decay
         # weight_decay must be explicitly specified if mult is specified
-        if ('bias_decay_mult' in self.paramwise_cfg
+        if (
+            (
+                'bias_decay_mult' in self.paramwise_cfg
                 or 'norm_decay_mult' in self.paramwise_cfg
-                or 'dwconv_decay_mult' in self.paramwise_cfg):
-            if self.base_wd is None:
-                raise ValueError('base_wd should not be None')
+                or 'dwconv_decay_mult' in self.paramwise_cfg
+            )
+        ) and self.base_wd is None:
+            raise ValueError('base_wd should not be None')
 
     def _is_in(self, param_group, param_group_list):
         assert is_list_of(param_group_list, dict)

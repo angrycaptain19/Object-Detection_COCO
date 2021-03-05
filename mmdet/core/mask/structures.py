@@ -377,53 +377,48 @@ class PolygonMasks(BaseInstanceMasks):
         """see :func:`BaseInstanceMasks.rescale`"""
         new_w, new_h = mmcv.rescale_size((self.width, self.height), scale)
         if len(self.masks) == 0:
-            rescaled_masks = PolygonMasks([], new_h, new_w)
+            return PolygonMasks([], new_h, new_w)
         else:
-            rescaled_masks = self.resize((new_h, new_w))
-        return rescaled_masks
+            return self.resize((new_h, new_w))
 
     def resize(self, out_shape, interpolation=None):
         """see :func:`BaseInstanceMasks.resize`"""
         if len(self.masks) == 0:
-            resized_masks = PolygonMasks([], *out_shape)
-        else:
-            h_scale = out_shape[0] / self.height
-            w_scale = out_shape[1] / self.width
-            resized_masks = []
-            for poly_per_obj in self.masks:
-                resized_poly = []
-                for p in poly_per_obj:
-                    p = p.copy()
-                    p[0::2] *= w_scale
-                    p[1::2] *= h_scale
-                    resized_poly.append(p)
-                resized_masks.append(resized_poly)
-            resized_masks = PolygonMasks(resized_masks, *out_shape)
-        return resized_masks
+            return PolygonMasks([], *out_shape)
+        h_scale = out_shape[0] / self.height
+        w_scale = out_shape[1] / self.width
+        resized_masks = []
+        for poly_per_obj in self.masks:
+            resized_poly = []
+            for p in poly_per_obj:
+                p = p.copy()
+                p[0::2] *= w_scale
+                p[1::2] *= h_scale
+                resized_poly.append(p)
+            resized_masks.append(resized_poly)
+        return PolygonMasks(resized_masks, *out_shape)
 
     def flip(self, flip_direction='horizontal'):
         """see :func:`BaseInstanceMasks.flip`"""
         assert flip_direction in ('horizontal', 'vertical')
         if len(self.masks) == 0:
-            flipped_masks = PolygonMasks([], self.height, self.width)
+            return PolygonMasks([], self.height, self.width)
+        if flip_direction == 'horizontal':
+            dim = self.width
+            idx = 0
         else:
-            if flip_direction == 'horizontal':
-                dim = self.width
-                idx = 0
-            else:
-                dim = self.height
-                idx = 1
-            flipped_masks = []
-            for poly_per_obj in self.masks:
-                flipped_poly_per_obj = []
-                for p in poly_per_obj:
-                    p = p.copy()
-                    p[idx::2] = dim - p[idx::2]
-                    flipped_poly_per_obj.append(p)
-                flipped_masks.append(flipped_poly_per_obj)
-            flipped_masks = PolygonMasks(flipped_masks, self.height,
+            dim = self.height
+            idx = 1
+        flipped_masks = []
+        for poly_per_obj in self.masks:
+            flipped_poly_per_obj = []
+            for p in poly_per_obj:
+                p = p.copy()
+                p[idx::2] = dim - p[idx::2]
+                flipped_poly_per_obj.append(p)
+            flipped_masks.append(flipped_poly_per_obj)
+        return PolygonMasks(flipped_masks, self.height,
                                          self.width)
-        return flipped_masks
 
     def crop(self, bbox):
         """see :func:`BaseInstanceMasks.crop`"""
@@ -439,20 +434,18 @@ class PolygonMasks(BaseInstanceMasks):
         h = np.maximum(y2 - y1, 1)
 
         if len(self.masks) == 0:
-            cropped_masks = PolygonMasks([], h, w)
-        else:
-            cropped_masks = []
-            for poly_per_obj in self.masks:
-                cropped_poly_per_obj = []
-                for p in poly_per_obj:
-                    # pycocotools will clip the boundary
-                    p = p.copy()
-                    p[0::2] -= bbox[0]
-                    p[1::2] -= bbox[1]
-                    cropped_poly_per_obj.append(p)
-                cropped_masks.append(cropped_poly_per_obj)
-            cropped_masks = PolygonMasks(cropped_masks, h, w)
-        return cropped_masks
+            return PolygonMasks([], h, w)
+        cropped_masks = []
+        for poly_per_obj in self.masks:
+            cropped_poly_per_obj = []
+            for p in poly_per_obj:
+                # pycocotools will clip the boundary
+                p = p.copy()
+                p[0::2] -= bbox[0]
+                p[1::2] -= bbox[1]
+                cropped_poly_per_obj.append(p)
+            cropped_masks.append(cropped_poly_per_obj)
+        return PolygonMasks(cropped_masks, h, w)
 
     def pad(self, out_shape, pad_val=0):
         """padding has no effect on polygons`"""
@@ -516,9 +509,10 @@ class PolygonMasks(BaseInstanceMasks):
         """  # noqa: W501
         area = []
         for polygons_per_obj in self.masks:
-            area_per_obj = 0
-            for p in polygons_per_obj:
-                area_per_obj += self._polygon_area(p[0::2], p[1::2])
+            area_per_obj = sum(
+                self._polygon_area(p[0::2], p[1::2]) for p in polygons_per_obj
+            )
+
             area.append(area_per_obj)
         return np.asarray(area)
 
@@ -542,10 +536,11 @@ class PolygonMasks(BaseInstanceMasks):
         """Convert masks to the format of ndarray."""
         if len(self.masks) == 0:
             return np.empty((0, self.height, self.width), dtype=np.uint8)
-        bitmap_masks = []
-        for poly_per_obj in self.masks:
-            bitmap_masks.append(
-                polygon_to_bitmap(poly_per_obj, self.height, self.width))
+        bitmap_masks = [
+            polygon_to_bitmap(poly_per_obj, self.height, self.width)
+            for poly_per_obj in self.masks
+        ]
+
         return np.stack(bitmap_masks)
 
     def to_tensor(self, dtype, device):
@@ -571,5 +566,4 @@ def polygon_to_bitmap(polygons, height, width):
     """
     rles = maskUtils.frPyObjects(polygons, height, width)
     rle = maskUtils.merge(rles)
-    bitmap_mask = maskUtils.decode(rle).astype(np.bool)
-    return bitmap_mask
+    return maskUtils.decode(rle).astype(np.bool)

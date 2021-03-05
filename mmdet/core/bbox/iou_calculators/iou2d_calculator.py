@@ -32,8 +32,7 @@ class BboxOverlaps2D(object):
 
     def __repr__(self):
         """str: a string describing the module"""
-        repr_str = self.__class__.__name__ + '()'
-        return repr_str
+        return self.__class__.__name__ + '()'
 
 
 def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
@@ -125,6 +124,4 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
 
     eps = union.new_tensor([eps])
     union = torch.max(union, eps)
-    ious = overlap / union
-
-    return ious
+    return overlap / union

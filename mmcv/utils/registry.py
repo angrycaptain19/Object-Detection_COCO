@@ -14,7 +14,7 @@ class Registry:
 
     def __init__(self, name):
         self._name = name
-        self._module_dict = dict()
+        self._module_dict = {}
 
     def __len__(self):
         return len(self._module_dict)
@@ -23,10 +23,9 @@ class Registry:
         return self.get(key) is not None
 
     def __repr__(self):
-        format_str = self.__class__.__name__ + \
+        return self.__class__.__name__ + \
                      f'(name={self._name}, ' \
                      f'items={self._module_dict})'
-        return format_str
 
     @property
     def name(self):

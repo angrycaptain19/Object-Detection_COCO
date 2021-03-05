@@ -161,8 +161,7 @@ def make_res_layer(block,
             nn.BatchNorm2d(planes * block.expansion),
         )
 
-    layers = []
-    layers.append(
+    layers = [
         block(
             inplanes,
             planes,
@@ -170,7 +169,10 @@ def make_res_layer(block,
             dilation,
             downsample,
             style=style,
-            with_cp=with_cp))
+            with_cp=with_cp,
+        )
+    ]
+
     inplanes = planes * block.expansion
     for _ in range(1, blocks):
         layers.append(

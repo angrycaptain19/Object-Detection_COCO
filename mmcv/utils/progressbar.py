@@ -36,10 +36,7 @@ class ProgressBar:
         assert num_tasks > 0
         self.completed += num_tasks
         elapsed = self.timer.since_start()
-        if elapsed > 0:
-            fps = self.completed / elapsed
-        else:
-            fps = float('inf')
+        fps = self.completed / elapsed if elapsed > 0 else float('inf')
         if self.task_num > 0:
             percentage = self.completed / float(self.task_num)
             eta = int(elapsed * (1 - percentage) / percentage + 0.5)

@@ -59,10 +59,7 @@ class Resize(object):
         if img_scale is None:
             self.img_scale = None
         else:
-            if isinstance(img_scale, list):
-                self.img_scale = img_scale
-            else:
-                self.img_scale = [img_scale]
+            self.img_scale = img_scale if isinstance(img_scale, list) else [img_scale]
             assert mmcv.is_list_of(self.img_scale, tuple)
 
         if ratio_range is not None:
@@ -337,7 +334,7 @@ class RandomFlip(object):
         """
 
         if 'flip' not in results:
-            flip = True if np.random.rand() < self.flip_ratio else False
+            flip = np.random.rand() < self.flip_ratio
             results['flip'] = flip
         if 'flip_direction' not in results:
             results['flip_direction'] = self.direction
@@ -664,11 +661,10 @@ class PhotoMetricDistortion(object):
         # mode == 0 --> do random contrast first
         # mode == 1 --> do random contrast last
         mode = random.randint(2)
-        if mode == 1:
-            if random.randint(2):
-                alpha = random.uniform(self.contrast_lower,
-                                       self.contrast_upper)
-                img *= alpha
+        if mode == 1 and random.randint(2):
+            alpha = random.uniform(self.contrast_lower,
+                                   self.contrast_upper)
+            img *= alpha
 
         # convert color from BGR to HSV
         img = mmcv.bgr2hsv(img)
@@ -688,11 +684,10 @@ class PhotoMetricDistortion(object):
         img = mmcv.hsv2bgr(img)
 
         # random contrast
-        if mode == 0:
-            if random.randint(2):
-                alpha = random.uniform(self.contrast_lower,
-                                       self.contrast_upper)
-                img *= alpha
+        if mode == 0 and random.randint(2):
+            alpha = random.uniform(self.contrast_lower,
+                                   self.contrast_upper)
+            img *= alpha
 
         # randomly swap channels
         if random.randint(2):
@@ -734,10 +729,7 @@ class Expand(object):
                  prob=0.5):
         self.to_rgb = to_rgb
         self.ratio_range = ratio_range
-        if to_rgb:
-            self.mean = mean[::-1]
-        else:
-            self.mean = mean
+        self.mean = mean[::-1] if to_rgb else mean
         self.min_ratio, self.max_ratio = ratio_range
         self.seg_ignore_label = seg_ignore_label
         self.prob = prob
@@ -884,11 +876,10 @@ class MinIoURandomCrop(object):
                     # adjust boxes
                     def is_center_of_bboxes_in_patch(boxes, patch):
                         center = (boxes[:, :2] + boxes[:, 2:]) / 2
-                        mask = ((center[:, 0] > patch[0]) *
+                        return ((center[:, 0] > patch[0]) *
                                 (center[:, 1] > patch[1]) *
                                 (center[:, 0] < patch[2]) *
                                 (center[:, 1] < patch[3]))
-                        return mask
 
                     mask = is_center_of_bboxes_in_patch(boxes, patch)
                     if not mask.any():
@@ -1165,8 +1156,7 @@ class Albu(object):
         return results
 
     def __repr__(self):
-        repr_str = self.__class__.__name__ + f'(transforms={self.transforms})'
-        return repr_str
+        return self.__class__.__name__ + f'(transforms={self.transforms})'
 
 
 @PIPELINES.register_module()
@@ -1325,10 +1315,9 @@ class RandomCenterCropPad(object):
             mask (numpy array, (N,)): Each box is inside or outside the patch.
         """
         center = (boxes[:, :2] + boxes[:, 2:]) / 2
-        mask = (center[:, 0] > patch[0]) * (center[:, 1] > patch[1]) * (
+        return (center[:, 0] > patch[0]) * (center[:, 1] > patch[1]) * (
             center[:, 0] < patch[2]) * (
                 center[:, 1] < patch[3])
-        return mask
 
     def _crop_image_and_paste(self, image, center, size):
         """Crop image with a given center and size, then paste the cropped
@@ -1400,7 +1389,7 @@ class RandomCenterCropPad(object):
             h_border = self._get_border(self.border, h)
             w_border = self._get_border(self.border, w)
 
-            for i in range(50):
+            for _ in range(50):
                 center_x = random.randint(low=w_border, high=w - w_border)
                 center_y = random.randint(low=h_border, high=h - h_border)
 

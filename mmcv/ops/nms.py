@@ -15,9 +15,8 @@ class NMSop(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, bboxes, scores, iou_threshold, offset):
-        inds = ext_module.nms(
+        return ext_module.nms(
             bboxes, scores, iou_threshold=float(iou_threshold), offset=offset)
-        return inds
 
     @staticmethod
     def symbolic(g, bboxes, scores, iou_threshold, offset):
@@ -168,7 +167,7 @@ def soft_nms(boxes,
     assert boxes.size(0) == scores.size(0)
     assert offset in (0, 1)
     method_dict = {'naive': 0, 'linear': 1, 'gaussian': 2}
-    assert method in method_dict.keys()
+    assert method in method_dict
 
     if torch.__version__ == 'parrots':
         x1 = boxes[:, 0]
@@ -198,12 +197,12 @@ def soft_nms(boxes,
             method=method_dict[method],
             offset=int(offset))
     dets = dets[:inds.size(0)]
-    if is_numpy:
-        dets = dets.cpu().numpy()
-        inds = inds.cpu().numpy()
-        return dets, inds
-    else:
+    if not is_numpy:
         return dets.to(device=boxes.device), inds.to(device=boxes.device)
+
+    dets = dets.cpu().numpy()
+    inds = inds.cpu().numpy()
+    return dets, inds
 
 
 def batched_nms(boxes, scores, idxs, nms_cfg, class_agnostic=False):

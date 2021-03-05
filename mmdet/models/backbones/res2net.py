@@ -67,8 +67,6 @@ class Bottle2neck(_Bottleneck):
                         bias=False))
                 bns.append(
                     build_norm_layer(self.norm_cfg, width, postfix=i + 1)[1])
-            self.convs = nn.ModuleList(convs)
-            self.bns = nn.ModuleList(bns)
         else:
             assert self.conv_cfg is None, 'conv_cfg must be None for DCN'
             for i in range(scales - 1):
@@ -84,9 +82,8 @@ class Bottle2neck(_Bottleneck):
                         bias=False))
                 bns.append(
                     build_norm_layer(self.norm_cfg, width, postfix=i + 1)[1])
-            self.convs = nn.ModuleList(convs)
-            self.bns = nn.ModuleList(bns)
-
+        self.convs = nn.ModuleList(convs)
+        self.bns = nn.ModuleList(bns)
         self.conv3 = build_conv_layer(
             self.conv_cfg,
             width * scales,
@@ -119,10 +116,7 @@ class Bottle2neck(_Bottleneck):
             sp = self.relu(self.bns[0](sp))
             out = sp
             for i in range(1, self.scales - 1):
-                if self.stage_type == 'stage':
-                    sp = spx[i]
-                else:
-                    sp = sp + spx[i]
+                sp = spx[i] if self.stage_type == 'stage' else sp + spx[i]
                 sp = self.convs[i](sp.contiguous())
                 sp = self.relu(self.bns[i](sp))
                 out = torch.cat((out, sp), 1)
@@ -209,8 +203,7 @@ class Res2Layer(nn.Sequential):
                 build_norm_layer(norm_cfg, planes * block.expansion)[1],
             )
 
-        layers = []
-        layers.append(
+        layers = [
             block(
                 inplanes=inplanes,
                 planes=planes,
@@ -221,9 +214,12 @@ class Res2Layer(nn.Sequential):
                 scales=scales,
                 base_width=base_width,
                 stage_type='stage',
-                **kwargs))
+                **kwargs
+            )
+        ]
+
         inplanes = planes * block.expansion
-        for i in range(1, num_blocks):
+        for _ in range(1, num_blocks):
             layers.append(
                 block(
                     inplanes=inplanes,

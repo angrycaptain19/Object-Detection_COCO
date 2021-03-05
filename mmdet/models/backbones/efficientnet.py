@@ -77,8 +77,7 @@ def drop_connect(inputs, p, training):
     random_tensor = keep_prob
     random_tensor += torch.rand([batch_size, 1, 1, 1], dtype=inputs.dtype, device=inputs.device)
     binary_tensor = torch.floor(random_tensor)
-    output = inputs / keep_prob * binary_tensor
-    return output
+    return inputs / keep_prob * binary_tensor
 
 
 def get_same_padding_conv2d(image_size=None):
@@ -198,10 +197,10 @@ class BlockDecoder(object):
         :return: a list of BlockArgs namedtuples of block args
         """
         assert isinstance(string_list, list)
-        blocks_args = []
-        for block_string in string_list:
-            blocks_args.append(BlockDecoder._decode_block_string(block_string))
-        return blocks_args
+        return [
+            BlockDecoder._decode_block_string(block_string)
+            for block_string in string_list
+        ]
 
     @staticmethod
     def encode(blocks_args):
@@ -210,10 +209,7 @@ class BlockDecoder(object):
         :param blocks_args: a list of BlockArgs namedtuples of block args
         :return: a list of strings, each string is a notation of block
         """
-        block_strings = []
-        for block in blocks_args:
-            block_strings.append(BlockDecoder._encode_block_string(block))
-        return block_strings
+        return [BlockDecoder._encode_block_string(block) for block in blocks_args]
 
 
 url_map = {

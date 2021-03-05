@@ -62,17 +62,20 @@ class TextLoggerHook(LoggerHook):
     def _log_info(self, log_dict, runner):
         # print exp name for users to distinguish experiments
         # at every ``interval_exp_name`` iterations and the end of each epoch
-        if runner.meta is not None and 'exp_name' in runner.meta:
-            if (self.every_n_iters(runner, self.interval_exp_name)) or (
-                    self.by_epoch and self.end_of_epoch(runner)):
-                exp_info = f'Exp name: {runner.meta["exp_name"]}'
-                runner.logger.info(exp_info)
+        if (
+            runner.meta is not None
+            and 'exp_name' in runner.meta
+            and (
+                (self.every_n_iters(runner, self.interval_exp_name))
+                or (self.by_epoch and self.end_of_epoch(runner))
+            )
+        ):
+            exp_info = f'Exp name: {runner.meta["exp_name"]}'
+            runner.logger.info(exp_info)
 
         if runner.mode == 'train':
             if isinstance(log_dict['lr'], dict):
-                lr_str = []
-                for k, val in log_dict['lr'].items():
-                    lr_str.append(f'lr_{k}: {val:.3e}')
+                lr_str = [f'lr_{k}: {val:.3e}' for k, val in log_dict['lr'].items()]
                 lr_str = ' '.join(lr_str)
             else:
                 lr_str = f'lr: {log_dict["lr"]:.3e}'
@@ -146,10 +149,7 @@ class TextLoggerHook(LoggerHook):
         mode = 'train' if 'time' in runner.log_buffer.output else 'val'
         log_dict['mode'] = mode
         log_dict['epoch'] = runner.epoch + 1
-        if self.by_epoch:
-            log_dict['iter'] = runner.inner_iter + 1
-        else:
-            log_dict['iter'] = runner.iter + 1
+        log_dict['iter'] = runner.inner_iter + 1 if self.by_epoch else runner.iter + 1
         # only record lr of the first param group
         cur_lr = runner.current_lr()
         if isinstance(cur_lr, list):

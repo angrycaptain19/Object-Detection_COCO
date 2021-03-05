@@ -76,8 +76,7 @@ class AnchorHead(BaseDenseHead):
         self.background_label = (
             num_classes if background_label is None else background_label)
         # background_label should be either 0 or num_classes
-        assert (self.background_label == 0
-                or self.background_label == num_classes)
+        assert self.background_label in [0, num_classes]
 
         self.bbox_coder = build_bbox_coder(bbox_coder)
         self.loss_cls = build_loss(loss_cls)
@@ -357,11 +356,11 @@ class AnchorHead(BaseDenseHead):
          pos_inds_list, neg_inds_list, sampling_results_list) = results[:7]
         rest_results = list(results[7:])  # user-added return values
         # no valid anchors
-        if any([labels is None for labels in all_labels]):
+        if any(labels is None for labels in all_labels):
             return None
         # sampled anchors of all images
-        num_total_pos = sum([max(inds.numel(), 1) for inds in pos_inds_list])
-        num_total_neg = sum([max(inds.numel(), 1) for inds in neg_inds_list])
+        num_total_pos = sum(max(inds.numel(), 1) for inds in pos_inds_list)
+        num_total_neg = sum(max(inds.numel(), 1) for inds in neg_inds_list)
         # split targets to a list w.r.t. multiple levels
         labels_list = images_to_levels(all_labels, num_level_anchors)
         label_weights_list = images_to_levels(all_label_weights,
@@ -478,9 +477,10 @@ class AnchorHead(BaseDenseHead):
         # anchor number of multi levels
         num_level_anchors = [anchors.size(0) for anchors in anchor_list[0]]
         # concat all level anchors and flags to a single tensor
-        concat_anchor_list = []
-        for i in range(len(anchor_list)):
-            concat_anchor_list.append(torch.cat(anchor_list[i]))
+        concat_anchor_list = [
+            torch.cat(anchor_list[i]) for i in range(len(anchor_list))
+        ]
+
         all_anchor_list = images_to_levels(concat_anchor_list,
                                            num_level_anchors)
 
@@ -614,10 +614,7 @@ class AnchorHead(BaseDenseHead):
             assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
             cls_score = cls_score.permute(1, 2,
                                           0).reshape(-1, self.cls_out_channels)
-            if self.use_sigmoid_cls:
-                scores = cls_score.sigmoid()
-            else:
-                scores = cls_score.softmax(-1)
+            scores = cls_score.sigmoid() if self.use_sigmoid_cls else cls_score.softmax(-1)
             bbox_pred = bbox_pred.permute(1, 2, 0).reshape(-1, 4)
             nms_pre = cfg.get('nms_pre', -1)
             if nms_pre > 0 and scores.shape[0] > nms_pre:

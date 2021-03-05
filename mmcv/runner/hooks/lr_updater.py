@@ -27,11 +27,10 @@ class LrUpdaterHook(Hook):
                  warmup_ratio=0.1,
                  warmup_by_epoch=False):
         # validate the "warmup" argument
-        if warmup is not None:
-            if warmup not in ['constant', 'linear', 'exp']:
-                raise ValueError(
-                    f'"{warmup}" is not a supported type for warming up, valid'
-                    ' types are "constant" and "linear"')
+        if warmup is not None and warmup not in ['constant', 'linear', 'exp']:
+            raise ValueError(
+                f'"{warmup}" is not a supported type for warming up, valid'
+                ' types are "constant" and "linear"')
         if warmup is not None:
             assert warmup_iters > 0, \
                 '"warmup_iters" must be a positive integer'
@@ -67,18 +66,18 @@ class LrUpdaterHook(Hook):
         raise NotImplementedError
 
     def get_regular_lr(self, runner):
-        if isinstance(runner.optimizer, dict):
-            lr_groups = {}
-            for k in runner.optimizer.keys():
-                _lr_group = [
-                    self.get_lr(runner, _base_lr)
-                    for _base_lr in self.base_lr[k]
-                ]
-                lr_groups.update({k: _lr_group})
-
-            return lr_groups
-        else:
+        if not isinstance(runner.optimizer, dict):
             return [self.get_lr(runner, _base_lr) for _base_lr in self.base_lr]
+
+        lr_groups = {}
+        for k in runner.optimizer.keys():
+            _lr_group = [
+                self.get_lr(runner, _base_lr)
+                for _base_lr in self.base_lr[k]
+            ]
+            lr_groups.update({k: _lr_group})
+
+        return lr_groups
 
     def get_warmup_lr(self, cur_iters):
         if self.warmup == 'constant':
@@ -129,7 +128,7 @@ class LrUpdaterHook(Hook):
             else:
                 warmup_lr = self.get_warmup_lr(cur_iter)
                 self._set_lr(runner, warmup_lr)
-        elif self.by_epoch:
+        else:
             if self.warmup is None or cur_iter > self.warmup_iters:
                 return
             elif cur_iter == self.warmup_iters:
@@ -277,15 +276,11 @@ class CosineRestartLrUpdaterHook(LrUpdaterHook):
         super(CosineRestartLrUpdaterHook, self).__init__(**kwargs)
 
         self.cumulative_periods = [
-            sum(self.periods[0:i + 1]) for i in range(0, len(self.periods))
+            sum(self.periods[0 : i + 1]) for i in range(len(self.periods))
         ]
 
     def get_lr(self, runner, base_lr):
-        if self.by_epoch:
-            progress = runner.epoch
-        else:
-            progress = runner.iter
-
+        progress = runner.epoch if self.by_epoch else runner.iter
         if self.min_lr_ratio is not None:
             target_lr = base_lr * self.min_lr_ratio
         else:

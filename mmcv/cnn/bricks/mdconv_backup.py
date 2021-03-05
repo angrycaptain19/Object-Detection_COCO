@@ -60,7 +60,6 @@ class MDconv(ConvAWS2d):
 #            bias=True)
 
     def forward(self, x):
-        
 #        out_s = self.conv3(x)
 #        out_l = self.conv5(x)
 #        out_t = self.conv7(x)
@@ -86,8 +85,7 @@ class MDconv(ConvAWS2d):
         weight = weight + self.weight_diff
         out_t = F.conv2d(x, weight,padding=(3,3),dilation=(3,3))
         out_c = torch.cat((out_l,out_s,out_t),1)
-        out_x = self.switch(out_c)
 #        self.padding = ori_p
 #        self.dilation = ori_d
 
-        return out_x
+        return self.switch(out_c)

@@ -121,24 +121,23 @@ class XMLDataset(CustomDataset):
             else:
                 bboxes.append(bbox)
                 labels.append(label)
-        if not bboxes:
-            bboxes = np.zeros((0, 4))
-            labels = np.zeros((0, ))
-        else:
+        if bboxes:
             bboxes = np.array(bboxes, ndmin=2) - 1
             labels = np.array(labels)
-        if not bboxes_ignore:
-            bboxes_ignore = np.zeros((0, 4))
-            labels_ignore = np.zeros((0, ))
         else:
+            bboxes = np.zeros((0, 4))
+            labels = np.zeros((0, ))
+        if bboxes_ignore:
             bboxes_ignore = np.array(bboxes_ignore, ndmin=2) - 1
             labels_ignore = np.array(labels_ignore)
-        ann = dict(
+        else:
+            bboxes_ignore = np.zeros((0, 4))
+            labels_ignore = np.zeros((0, ))
+        return dict(
             bboxes=bboxes.astype(np.float32),
             labels=labels.astype(np.int64),
             bboxes_ignore=bboxes_ignore.astype(np.float32),
             labels_ignore=labels_ignore.astype(np.int64))
-        return ann
 
     def get_cat_ids(self, idx):
         """Get category ids in XML file by index.

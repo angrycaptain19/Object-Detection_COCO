@@ -252,8 +252,7 @@ class LoadAnnotations(object):
         else:
             # rle
             rle = mask_ann
-        mask = maskUtils.decode(rle)
-        return mask
+        return maskUtils.decode(rle)
 
     def process_polygons(self, polygons):
         """Convert polygons to list of ndarray and filter invalid polygons.
@@ -266,11 +265,11 @@ class LoadAnnotations(object):
         """
 
         polygons = [np.array(p) for p in polygons]
-        valid_polygons = []
-        for polygon in polygons:
-            if len(polygon) % 2 == 0 and len(polygon) >= 6:
-                valid_polygons.append(polygon)
-        return valid_polygons
+        return [
+            polygon
+            for polygon in polygons
+            if len(polygon) % 2 == 0 and len(polygon) >= 6
+        ]
 
     def _load_masks(self, results):
         """Private function to load mask annotations.

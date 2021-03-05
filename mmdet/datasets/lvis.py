@@ -413,10 +413,7 @@ class LVISDataset(CocoDataset):
                         nm = self.coco.load_cats(catId)[0]
                         precision = precisions[:, :, idx, 0, -1]
                         precision = precision[precision > -1]
-                        if precision.size:
-                            ap = np.mean(precision)
-                        else:
-                            ap = float('nan')
+                        ap = np.mean(precision) if precision.size else float('nan')
                         results_per_category.append(
                             (f'{nm["name"]}', f'{float(ap):0.3f}'))
 
@@ -438,10 +435,12 @@ class LVISDataset(CocoDataset):
                         key = '{}_{}'.format(metric, k)
                         val = float('{:.3f}'.format(float(v)))
                         eval_results[key] = val
-                ap_summary = ' '.join([
+                ap_summary = ' '.join(
                     '{}:{:.3f}'.format(k, float(v))
-                    for k, v in lvis_results.items() if k.startswith('AP')
-                ])
+                    for k, v in lvis_results.items()
+                    if k.startswith('AP')
+                )
+
                 eval_results['{}_mAP_copypaste'.format(metric)] = ap_summary
             lvis_eval.print_results()
         if tmp_dir is not None:

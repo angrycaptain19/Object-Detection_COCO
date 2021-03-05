@@ -134,8 +134,7 @@ def dequantize_flow(dx, dy, max_val=0.02, denorm=True):
     if denorm:
         dx *= dx.shape[1]
         dy *= dx.shape[0]
-    flow = np.dstack((dx, dy))
-    return flow
+    return np.dstack((dx, dy))
 
 
 def flow_warp(img, flow, filling_value=0, interpolate_mode='nearest'):
@@ -155,15 +154,13 @@ def flow_warp(img, flow, filling_value=0, interpolate_mode='nearest'):
     assert len(img.shape) == 3
     assert len(flow.shape) == 3 and flow.shape[2] == 2
     assert flow.shape[:2] == img.shape[:2]
-    assert interpolate_mode in interpolate_mode_dict.keys()
+    assert interpolate_mode in interpolate_mode_dict
 
     interpolate_mode = interpolate_mode_dict[interpolate_mode]
     img_float = img.astype(np.float64)
 
-    out = flow_warp_c(
+    return flow_warp_c(
         img_float,
         flow.astype(np.float64),
         filling_value=filling_value,
         interpolate_mode=interpolate_mode)
-
-    return out

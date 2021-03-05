@@ -63,9 +63,11 @@ def scandir(dir_path, suffix=None, recursive=False):
         for entry in os.scandir(dir_path):
             if not entry.name.startswith('.') and entry.is_file():
                 rel_path = osp.relpath(entry.path, root)
-                if suffix is None:
-                    yield rel_path
-                elif rel_path.endswith(suffix):
+                if (
+                    suffix is None
+                    or suffix is not None
+                    and rel_path.endswith(suffix)
+                ):
                     yield rel_path
             else:
                 if recursive:

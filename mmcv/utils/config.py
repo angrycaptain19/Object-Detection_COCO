@@ -160,14 +160,14 @@ class Config:
             base_filename = base_filename if isinstance(
                 base_filename, list) else [base_filename]
 
-            cfg_dict_list = list()
-            cfg_text_list = list()
+            cfg_dict_list = []
+            cfg_text_list = []
             for f in base_filename:
                 _cfg_dict, _cfg_text = Config._file2dict(osp.join(cfg_dir, f))
                 cfg_dict_list.append(_cfg_dict)
                 cfg_text_list.append(_cfg_text)
 
-            base_cfg_dict = dict()
+            base_cfg_dict = {}
             for c in cfg_dict_list:
                 if len(base_cfg_dict.keys() & c.keys()) > 0:
                     raise KeyError('Duplicate key is not allowed among bases')
@@ -221,7 +221,7 @@ class Config:
 
     def __init__(self, cfg_dict=None, cfg_text=None, filename=None):
         if cfg_dict is None:
-            cfg_dict = dict()
+            cfg_dict = {}
         elif not isinstance(cfg_dict, dict):
             raise TypeError('cfg_dict must be a dict, but '
                             f'got {type(cfg_dict)}')
@@ -264,11 +264,7 @@ class Config:
             return s
 
         def _format_basic_types(k, v, use_mapping=False):
-            if isinstance(v, str):
-                v_str = f"'{v}'"
-            else:
-                v_str = str(v)
-
+            v_str = f"'{v}'" if isinstance(v, str) else str(v)
             if use_mapping:
                 k_str = f"'{k}'" if isinstance(k, str) else str(k)
                 attr_str = f'{k_str}: {v_str}'
@@ -433,7 +429,7 @@ class DictAction(Action):
         except ValueError:
             pass
         if val.lower() in ['true', 'false']:
-            return True if val.lower() == 'true' else False
+            return val.lower() == 'true'
         return val
 
     def __call__(self, parser, namespace, values, option_string=None):

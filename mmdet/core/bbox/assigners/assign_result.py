@@ -76,8 +76,7 @@ class AssignResult(util_mixins.NiceRepr):
 
     def __nice__(self):
         """str: a "nice" summary string describing this assign result"""
-        parts = []
-        parts.append(f'num_gts={self.num_gts!r}')
+        parts = [f'num_gts={self.num_gts!r}']
         if self.gt_inds is None:
             parts.append(f'gt_inds={self.gt_inds!r}')
         else:
@@ -184,8 +183,7 @@ class AssignResult(util_mixins.NiceRepr):
             else:
                 labels = None
 
-        self = cls(num_gts, gt_inds, max_overlaps, labels)
-        return self
+        return cls(num_gts, gt_inds, max_overlaps, labels)
 
     def add_gt_(self, gt_labels):
         """Add ground truth as assigned results.

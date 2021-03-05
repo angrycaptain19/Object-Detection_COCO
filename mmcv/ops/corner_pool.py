@@ -22,8 +22,7 @@ class TopPoolFunction(Function):
     @staticmethod
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
-        output = ext_module.top_pool_backward(input, grad_output)
-        return output
+        return ext_module.top_pool_backward(input, grad_output)
 
 
 class BottomPoolFunction(Function):
@@ -37,8 +36,7 @@ class BottomPoolFunction(Function):
     @staticmethod
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
-        output = ext_module.bottom_pool_backward(input, grad_output)
-        return output
+        return ext_module.bottom_pool_backward(input, grad_output)
 
 
 class LeftPoolFunction(Function):
@@ -52,8 +50,7 @@ class LeftPoolFunction(Function):
     @staticmethod
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
-        output = ext_module.left_pool_backward(input, grad_output)
-        return output
+        return ext_module.left_pool_backward(input, grad_output)
 
 
 class RightPoolFunction(Function):
@@ -67,8 +64,7 @@ class RightPoolFunction(Function):
     @staticmethod
     def backward(ctx, grad_output):
         input, = ctx.saved_tensors
-        output = ext_module.right_pool_backward(input, grad_output)
-        return output
+        return ext_module.right_pool_backward(input, grad_output)
 
 
 class CornerPool(nn.Module):
@@ -113,13 +109,13 @@ class CornerPool(nn.Module):
         self.corner_pool = self.pool_functions[mode]
 
     def forward(self, x):
-        if torch.__version__ != 'parrots' and torch.__version__ >= '1.5.0':
-            dim, flip = self.cummax_dim_flip[self.mode]
-            if flip:
-                x = x.flip(dim)
-            pool_tensor, _ = torch.cummax(x, dim=dim)
-            if flip:
-                pool_tensor = pool_tensor.flip(dim)
-            return pool_tensor
-        else:
+        if torch.__version__ == 'parrots' or torch.__version__ < '1.5.0':
             return self.corner_pool.apply(x)
+
+        dim, flip = self.cummax_dim_flip[self.mode]
+        if flip:
+            x = x.flip(dim)
+        pool_tensor, _ = torch.cummax(x, dim=dim)
+        if flip:
+            pool_tensor = pool_tensor.flip(dim)
+        return pool_tensor

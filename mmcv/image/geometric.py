@@ -86,10 +86,9 @@ def imresize(img,
             img, size, dst=out, interpolation=cv2_interp_codes[interpolation])
     if not return_scale:
         return resized_img
-    else:
-        w_scale = size[0] / w
-        h_scale = size[1] / h
-        return resized_img, w_scale, h_scale
+    w_scale = size[0] / w
+    h_scale = size[1] / h
+    return resized_img, w_scale, h_scale
 
 
 def imresize_like(img,
@@ -256,8 +255,7 @@ def imrotate(img,
         matrix[1, 2] += (new_h - h) * 0.5
         w = int(np.round(new_w))
         h = int(np.round(new_h))
-    rotated = cv2.warpAffine(img, matrix, (w, h), borderValue=border_value)
-    return rotated
+    return cv2.warpAffine(img, matrix, (w, h), borderValue=border_value)
 
 
 def bbox_clip(bboxes, img_shape):
@@ -274,8 +272,7 @@ def bbox_clip(bboxes, img_shape):
     cmin = np.empty(bboxes.shape[-1], dtype=bboxes.dtype)
     cmin[0::2] = img_shape[1] - 1
     cmin[1::2] = img_shape[0] - 1
-    clipped_bboxes = np.maximum(np.minimum(bboxes, cmin), 0)
-    return clipped_bboxes
+    return np.maximum(np.minimum(bboxes, cmin), 0)
 
 
 def bbox_scaling(bboxes, scale, clip_shape=None):
